@@ -1,16 +1,40 @@
-import { Topbar } from "@/components/topbar";
-export default function Home() {
+import { AppSidebar } from "@/components/app-sidebar"
+import { ChartAreaInteractive } from "@/components/chart-area-interactive"
+import { DataTable } from "@/components/data-table"
+import { SectionCards } from "@/components/section-cards"
+import { SiteHeader } from "@/components/site-header"
+import {
+  SidebarInset,
+  SidebarProvider,
+} from "@/components/ui/sidebar"
+
+import data from "./data.json"
+
+export default function Page() {
   return (
-    <div className="p-4">
-      <Topbar />
-      <div className="mt-8">
-        <h1 className="text-2xl font-bold mb-4">MLB Hits Predictions Leaderboard</h1>
-        table will go here
-      </div>
-     
-      <div className="mt-8 border-t pt-8">
-        chart will go here
-      </div>
-    </div>
-  );
+    <SidebarProvider
+      style={
+        {
+          "--sidebar-width": "calc(var(--spacing) * 72)",
+          "--header-height": "calc(var(--spacing) * 12)",
+        } as React.CSSProperties
+      }
+    >
+      <AppSidebar variant="inset" />
+      <SidebarInset>
+        <SiteHeader />
+        <div className="flex flex-1 flex-col">
+          <div className="@container/main flex flex-1 flex-col gap-2">
+            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+              <SectionCards />
+              <div className="px-4 lg:px-6">
+                <ChartAreaInteractive />
+              </div>
+              <DataTable data={data} />
+            </div>
+          </div>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
+  )
 }

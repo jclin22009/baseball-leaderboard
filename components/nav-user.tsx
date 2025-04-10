@@ -2,7 +2,6 @@
 
 import {
   IconDotsVertical,
-  IconLogout,
   IconMail,
   IconBook,
   IconWorld,
