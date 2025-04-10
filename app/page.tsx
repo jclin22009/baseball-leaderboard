@@ -1,16 +1,37 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar"
 import { ChartAreaInteractive } from "@/components/chart-area-interactive"
-import { DataTable } from "@/components/data-table"
+import { DataTable, loadPredictionsData, schema } from "@/components/data-table"
 import { SectionCards } from "@/components/section-cards"
 import { SiteHeader } from "@/components/site-header"
 import {
   SidebarInset,
   SidebarProvider,
 } from "@/components/ui/sidebar"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { z } from "zod"
 
-import data from "./data.json"
+export default function Home() {
+  const [data, setData] = useState<z.infer<typeof schema>[]>([]);
+  const [loading, setLoading] = useState(true);
 
-export default function Page() {
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const predictions = await loadPredictionsData();
+        setData(predictions);
+      } catch (error) {
+        console.error("Failed to load predictions:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+  }, []);
+
   return (
     <SidebarProvider
       style={
@@ -30,7 +51,18 @@ export default function Page() {
               <div className="px-4 lg:px-6">
                 <ChartAreaInteractive />
               </div>
-              <DataTable data={data} />
+              <Card>
+                <CardHeader>
+                  <CardTitle>Baseball Predictions Leaderboard</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {loading ? (
+                    <p>Loading predictions...</p>
+                  ) : (
+                    <DataTable data={data} />
+                  )}
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
