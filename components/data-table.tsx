@@ -50,7 +50,6 @@ import { z } from "zod";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Drawer,
   DrawerClose,
@@ -94,6 +93,7 @@ export const schema = z.object({
   student: z.string(),
   player: z.string(),
   predictedHits: z.number(),
+  predictedHitsSoFar: z.number().optional(),
   actualHits: z.number().optional(),
   percentageOff: z.number().optional(),
 });
@@ -125,30 +125,17 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     cell: ({ row }) => <DragHandle id={row.original.id} />,
   },
   {
-    id: "select",
-    header: ({ table }) => (
-      <div className="flex items-center justify-center">
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-        />
-      </div>
-    ),
-    cell: ({ row }) => (
-      <div className="flex items-center justify-center">
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
-        />
-      </div>
-    ),
-    enableSorting: false,
-    enableHiding: false,
+    id: "position",
+    header: "#",
+    cell: ({ row, table }) => {
+      // Get current page rows with current sorting applied
+      const sortedRows = table.getSortedRowModel().rows;
+      
+      // Find the index of the current row in the sorted array
+      const rowRank = sortedRows.findIndex(r => r.id === row.id) + 1;
+      
+      return <div className="text-center font-medium">{rowRank}</div>;
+    },
   },
   {
     accessorKey: "student",
@@ -169,9 +156,16 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
   {
     accessorKey: "predictedHits",
-    header: "Predicted Hits",
+    header: "Predicted Hits (entire season)",
     cell: ({ row }) => (
       <div>{row.original.predictedHits}</div>
+    ),
+  },
+  {
+    accessorKey: "predictedHitsSoFar",
+    header: "Predicted Hits (season so far)",
+    cell: ({ row }) => (
+      <div>{row.original.predictedHitsSoFar != null ? row.original.predictedHitsSoFar.toFixed(1) : "-"}</div>
     ),
   },
   {
@@ -185,11 +179,24 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     accessorKey: "percentageOff",
     header: "Percentage Off",
     cell: ({ row }) => {
-      if (row.original.actualHits && row.original.percentageOff !== undefined) {
+      if (row.original.actualHits && row.original.percentageOff != null) {
         return <div>{row.original.percentageOff.toFixed(2)}%</div>;
       }
-      return <div>-</div>;
+      return <div className="text-gray-400">-</div>;
     },
+    sortingFn: (rowA, rowB) => {
+      const valueA = rowA.original.percentageOff;
+      const valueB = rowB.original.percentageOff;
+      
+      // If neither has percentage data, maintain original order
+      if (valueA == null && valueB == null) return 0;
+      // If A doesn't have percentage data, B comes first
+      if (valueA == null) return 1;
+      // If B doesn't have percentage data, A comes first
+      if (valueB == null) return -1;
+      // Otherwise sort by absolute value of percentage (ascending)
+      return Math.abs(valueA) - Math.abs(valueB);
+    }
   },
   {
     id: "actions",
@@ -250,14 +257,21 @@ export function DataTable({
   const [data, setData] = React.useState(() => initialData);
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
+    React.useState<VisibilityState>({
+      drag: false, // Hide drag handle by default
+    });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
-  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [sorting, setSorting] = React.useState<SortingState>([
+    {
+      id: "percentageOff",
+      desc: false
+    }
+  ]);
   const [pagination, setPagination] = React.useState({
     pageIndex: 0,
-    pageSize: 10,
+    pageSize: 30, // Set default to 30 rows per page
   });
   const sortableId = React.useId();
   const sensors = useSensors(
@@ -534,7 +548,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
         <DrawerHeader className="gap-1">
           <DrawerTitle>{item.student}</DrawerTitle>
           <DrawerDescription>
-            {item.player} - {item.predictedHits} Predicted Hits
+            {item.player} - {item.predictedHits} Predicted Hits (Season)
           </DrawerDescription>
         </DrawerHeader>
         <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
@@ -546,9 +560,10 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                   Student prediction details
                 </div>
                 <div className="text-muted-foreground">
-                  {item.student} predicted {item.predictedHits} hits for {item.player}.
-                  {item.actualHits ? ` Actual hits: ${item.actualHits}` : ''}
-                  {item.percentageOff ? ` Percentage off: ${item.percentageOff.toFixed(2)}%` : ''}
+                  {item.student} predicted {item.predictedHits} hits for {item.player} over the entire season.
+                  {item.predictedHitsSoFar != null ? ` Predicted hits so far: ${item.predictedHitsSoFar.toFixed(1)}` : ''}
+                  {item.actualHits ? ` Actual hits so far: ${item.actualHits}` : ''}
+                  {item.percentageOff != null ? ` Percentage off: ${item.percentageOff.toFixed(2)}%` : ''}
                 </div>
               </div>
               <Separator />
@@ -565,19 +580,23 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                 <Input id="player" defaultValue={item.player} />
               </div>
               <div className="flex flex-col gap-3">
-                <Label htmlFor="predictedHits">Predicted Hits</Label>
+                <Label htmlFor="predictedHits">Predicted Hits (Season)</Label>
                 <Input id="predictedHits" defaultValue={item.predictedHits} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
+                <Label htmlFor="predictedHitsSoFar">Predicted Hits (So Far)</Label>
+                <Input id="predictedHitsSoFar" defaultValue={item.predictedHitsSoFar != null ? item.predictedHitsSoFar.toFixed(1) : ""} />
+              </div>
+              <div className="flex flex-col gap-3">
                 <Label htmlFor="actualHits">Actual Hits</Label>
                 <Input id="actualHits" defaultValue={item.actualHits || ""} />
               </div>
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="percentageOff">Percentage Off</Label>
-                <Input id="percentageOff" defaultValue={item.percentageOff !== undefined ? item.percentageOff : ""} />
-              </div>
+            </div>
+            <div className="flex flex-col gap-3">
+              <Label htmlFor="percentageOff">Percentage Off</Label>
+              <Input id="percentageOff" defaultValue={item.percentageOff != null ? item.percentageOff.toFixed(2) + "%" : ""} />
             </div>
           </form>
         </div>
@@ -611,14 +630,69 @@ export async function loadPredictionsData() {
       }, {} as Record<string, string>);
     });
     
-    // Transform the data to match our schema
-    return records.map((record, index) => ({
-      id: index + 1,
-      student: record.student,
-      player: record.baseball_player,
-      predictedHits: parseInt(record.predicted_hits, 10),
-      // actualHits and percentageOff would be added later when actual data is available
-    }));
+    // Calculate the proportion of the season that has elapsed
+    const today = new Date();
+    const seasonStart = new Date('2025-03-27');
+    const seasonEnd = new Date('2025-09-28');
+    
+    // Handle the case if we're viewing this before the season starts
+    const elapsedTime = Math.max(0, today.getTime() - seasonStart.getTime());
+    const totalSeasonTime = seasonEnd.getTime() - seasonStart.getTime();
+    const seasonProportion = elapsedTime / totalSeasonTime;
+    
+    // Process each record with player IDs and hit data
+    const recordsWithStats = await Promise.all(
+      records.map(async (record, index) => {
+        // Step 1: Get player ID from player name
+        const playerName = record.baseball_player;
+        let playerId: string | null = null;
+        let actualHits: number | null = null;
+        let percentageOff: number | null = null;
+        const predictedHits = parseInt(record.predicted_hits, 10);
+        
+        // Calculate predicted hits so far based on season proportion
+        // Ensure this is null if seasonProportion is 0
+        const predictedHitsSoFar = seasonProportion > 0 ? Number((predictedHits * seasonProportion).toFixed(1)) : null;
+        
+        try {
+          const playerIdResponse = await fetch(`/api/get-player-id?fullname=${encodeURIComponent(playerName)}`);
+          if (playerIdResponse.ok) {
+            const playerData = await playerIdResponse.json();
+            playerId = playerData.id;
+            
+            // Step 2: Get actual hits for this player
+            if (playerId) {
+              const hitsResponse = await fetch(`/api/get-hits-so-far?playerId=${playerId}&season=2025`);
+              if (hitsResponse.ok) {
+                const hitsData = await hitsResponse.json();
+                actualHits = hitsData.hits;
+                
+                // Step 3: Calculate percentage off
+                if (actualHits !== null && actualHits > 0 && predictedHitsSoFar !== null) {
+                  // Calculate absolute difference as a percentage of actual hits
+                  const diff = Math.abs(predictedHitsSoFar - actualHits);
+                  percentageOff = Number(((diff / actualHits) * 100).toFixed(2));
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error(`Error processing player data for ${playerName}:`, error);
+        }
+        
+        return {
+          id: index + 1,
+          student: record.student,
+          player: record.baseball_player,
+          predictedHits: predictedHits,
+          predictedHitsSoFar: predictedHitsSoFar,
+          actualHits: actualHits,
+          percentageOff: percentageOff,
+        };
+      })
+    );
+    
+    return recordsWithStats;
   } catch (error) {
     console.error('Error loading predictions data:', error);
     return [];
