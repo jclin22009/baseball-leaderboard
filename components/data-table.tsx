@@ -26,7 +26,6 @@ import {
   IconChevronRight,
   IconChevronsLeft,
   IconChevronsRight,
-  IconDotsVertical,
   IconGripVertical,
   IconLayoutColumns,
 } from "@tabler/icons-react";
@@ -64,8 +63,6 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -156,14 +153,22 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
   {
     accessorKey: "predictedHits",
-    header: "Predicted Hits (entire season)",
+    header: () => (
+      <div className="flex items-center whitespace-nowrap">
+        Predicted Hits <Badge variant="outline" className="ml-2">Full Season</Badge>
+      </div>
+    ),
     cell: ({ row }) => (
       <div>{row.original.predictedHits}</div>
     ),
   },
   {
     accessorKey: "predictedHitsSoFar",
-    header: "Predicted Hits (season so far)",
+    header: () => (
+      <div className="flex items-center whitespace-nowrap">
+        Predicted Hits <Badge variant="outline" className="ml-2">To Date</Badge>
+      </div>
+    ),
     cell: ({ row }) => (
       <div>{row.original.predictedHitsSoFar != null ? row.original.predictedHitsSoFar.toFixed(1) : "-"}</div>
     ),
@@ -177,7 +182,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
   {
     accessorKey: "percentageOff",
-    header: "Percentage Off",
+    header: "Prediction Delta",
     cell: ({ row }) => {
       if (row.original.actualHits && row.original.percentageOff != null) {
         return <div>{row.original.percentageOff.toFixed(2)}%</div>;
@@ -197,30 +202,6 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
       // Otherwise sort by absolute value of percentage (ascending)
       return Math.abs(valueA) - Math.abs(valueB);
     }
-  },
-  {
-    id: "actions",
-    cell: () => (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
-            size="icon"
-          >
-            <IconDotsVertical />
-            <span className="sr-only">Open menu</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-32">
-          <DropdownMenuItem>Edit</DropdownMenuItem>
-          <DropdownMenuItem>Make a copy</DropdownMenuItem>
-          <DropdownMenuItem>Favorite</DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive">Delete</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    ),
   },
 ];
 
@@ -256,6 +237,7 @@ export function DataTable({
 }) {
   const [data, setData] = React.useState(() => initialData);
   const [rowSelection, setRowSelection] = React.useState({});
+  const [activeTab, setActiveTab] = React.useState("top-by-percent");
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({
       drag: false, // Hide drag handle by default
@@ -295,6 +277,9 @@ export function DataTable({
       columnFilters,
       pagination,
     },
+    meta: {
+      activeTab,
+    },
     getRowId: (row) => row.id.toString(),
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
@@ -325,6 +310,7 @@ export function DataTable({
     <Tabs
       defaultValue="top-by-percent"
       className="w-full flex-col justify-start gap-6"
+      onValueChange={(value) => setActiveTab(value)}
     >
       <div className="flex items-center justify-between px-4 lg:px-6">
         <Label htmlFor="view-selector" className="sr-only">
@@ -519,7 +505,134 @@ export function DataTable({
         </div>
       </TabsContent>
       <TabsContent value="top-by-number" className="flex flex-col px-4 lg:px-6">
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
+        <div className="overflow-hidden rounded-lg border">
+          <DndContext
+            collisionDetection={closestCenter}
+            modifiers={[restrictToVerticalAxis]}
+            onDragEnd={handleDragEnd}
+            sensors={sensors}
+            id={sortableId}
+          >
+            <Table>
+              <TableHeader className="bg-muted sticky top-0 z-10">
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => {
+                      return (
+                        <TableHead key={header.id} colSpan={header.colSpan}>
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
+                        </TableHead>
+                      );
+                    })}
+                  </TableRow>
+                ))}
+              </TableHeader>
+              <TableBody className="**:data-[slot=table-cell]:first:w-8">
+                {table.getRowModel().rows?.length ? (
+                  <SortableContext
+                    items={dataIds}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {table.getRowModel().rows.map((row) => (
+                      <DraggableRow key={row.id} row={row} />
+                    ))}
+                  </SortableContext>
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length}
+                      className="h-24 text-center"
+                    >
+                      No results.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </DndContext>
+        </div>
+        <div className="flex items-center justify-between px-4">
+          <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
+            {table.getFilteredSelectedRowModel().rows.length} of{" "}
+            {table.getFilteredRowModel().rows.length} row(s) selected.
+          </div>
+          <div className="flex w-full items-center gap-8 lg:w-fit">
+            <div className="hidden items-center gap-2 lg:flex">
+              <Label htmlFor="rows-per-page-number" className="text-sm font-medium">
+                Rows per page
+              </Label>
+              <Select
+                value={`${table.getState().pagination.pageSize}`}
+                onValueChange={(value) => {
+                  table.setPageSize(Number(value));
+                }}
+              >
+                <SelectTrigger size="sm" className="w-20" id="rows-per-page-number">
+                  <SelectValue
+                    placeholder={table.getState().pagination.pageSize}
+                  />
+                </SelectTrigger>
+                <SelectContent side="top">
+                  {[10, 20, 30, 40, 50].map((pageSize) => (
+                    <SelectItem key={pageSize} value={`${pageSize}`}>
+                      {pageSize}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex w-fit items-center justify-center text-sm font-medium">
+              Page {table.getState().pagination.pageIndex + 1} of{" "}
+              {table.getPageCount()}
+            </div>
+            <div className="ml-auto flex items-center gap-2 lg:ml-0">
+              <Button
+                variant="outline"
+                className="hidden h-8 w-8 p-0 lg:flex"
+                onClick={() => table.setPageIndex(0)}
+                disabled={!table.getCanPreviousPage()}
+              >
+                <span className="sr-only">Go to first page</span>
+                <IconChevronsLeft />
+              </Button>
+              <Button
+                variant="outline"
+                className="size-8"
+                size="icon"
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+              >
+                <span className="sr-only">Go to previous page</span>
+                <IconChevronLeft />
+              </Button>
+              <Button
+                variant="outline"
+                className="size-8"
+                size="icon"
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+              >
+                <span className="sr-only">Go to next page</span>
+                <IconChevronRight />
+              </Button>
+              <Button
+                variant="outline"
+                className="hidden size-8 lg:flex"
+                size="icon"
+                onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+                disabled={!table.getCanNextPage()}
+              >
+                <span className="sr-only">Go to last page</span>
+                <IconChevronsRight />
+              </Button>
+            </div>
+          </div>
+        </div>
       </TabsContent>
       <TabsContent value="key-personnel" className="flex flex-col px-4 lg:px-6">
         <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
@@ -536,12 +649,14 @@ export function DataTable({
 
 function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
   const isMobile = useIsMobile();
+  // Extract first word from student name
+  const firstName = item.student.split(' ')[0];
 
   return (
     <Drawer direction={isMobile ? "bottom" : "right"}>
       <DrawerTrigger asChild>
         <Button variant="link" className="text-foreground w-fit px-0 text-left">
-          {item.student}
+          {firstName}
         </Button>
       </DrawerTrigger>
       <DrawerContent>
@@ -563,7 +678,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                   {item.student} predicted {item.predictedHits} hits for {item.player} over the entire season.
                   {item.predictedHitsSoFar != null ? ` Predicted hits so far: ${item.predictedHitsSoFar.toFixed(1)}` : ''}
                   {item.actualHits ? ` Actual hits so far: ${item.actualHits}` : ''}
-                  {item.percentageOff != null ? ` Percentage off: ${item.percentageOff.toFixed(2)}%` : ''}
+                  {item.percentageOff != null ? ` Prediction Delta: ${item.percentageOff.toFixed(2)}%` : ''}
                 </div>
               </div>
               <Separator />
@@ -595,7 +710,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
               </div>
             </div>
             <div className="flex flex-col gap-3">
-              <Label htmlFor="percentageOff">Percentage Off</Label>
+              <Label htmlFor="percentageOff">Prediction Delta</Label>
               <Input id="percentageOff" defaultValue={item.percentageOff != null ? item.percentageOff.toFixed(2) + "%" : ""} />
             </div>
           </form>
