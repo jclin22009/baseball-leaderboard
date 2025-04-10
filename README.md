@@ -3,6 +3,7 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 ## APIs Used
 
 - https://github.com/asbeane/mlb-stats-api
+- https://github.com/joerex1418/mlb-statsapi-swagger-docs/blob/main/swagger-docs.json
 
 ## Getting Started
 
