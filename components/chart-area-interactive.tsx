@@ -180,8 +180,7 @@ export function ChartAreaInteractive() {
       { range: '0% to 25%', min: 0, max: 25, count: 0 },
       { range: '25% to 50%', min: 25, max: 50, count: 0 },
       { range: '50% to 75%', min: 50, max: 75, count: 0 },
-      { range: '75% to 100%', min: 75, max: 100, count: 0 },
-      { range: '>100%', min: 100, max: Infinity, count: 0 }
+      { range: '75% to 100%+', min: 75, max: Infinity, count: 0 }
     ]
 
     // Calculate the actual signed error (not absolute)
@@ -354,7 +353,7 @@ export function ChartAreaInteractive() {
 
       <Card className="@container/card flex-1">
         <CardHeader>
-          <CardTitle>Student Prediction Error Distribution</CardTitle>
+          <CardTitle>Prediction Error Distribution</CardTitle>
           <CardDescription>
             Histogram of prediction errors (%)
           </CardDescription>
