@@ -171,18 +171,12 @@ export function ChartAreaInteractive() {
       return []
     }
 
-    // Create bins for error ranges
-    const bins = [
-      { range: '-100% to -75%', min: -100, max: -75, count: 0 },
-      { range: '-75% to -50%', min: -75, max: -50, count: 0 },
-      { range: '-50% to -25%', min: -50, max: -25, count: 0 },
-      { range: '-25% to 0%', min: -25, max: 0, count: 0 },
-      { range: '0% to 25%', min: 0, max: 25, count: 0 },
-      { range: '25% to 50%', min: 25, max: 50, count: 0 },
-      { range: '50% to 75%', min: 50, max: 75, count: 0 },
-      { range: '75% to 100%+', min: 75, max: Infinity, count: 0 }
-    ]
-
+    // Define bin boundaries
+    const boundaries = [-100, -75, -50, -25, 0, 25, 50, 75, Infinity];
+    
+    // Initialize bin counts
+    const binCounts = Array(boundaries.length - 1).fill(0);
+    
     // Calculate the actual signed error (not absolute)
     predictionsData.forEach(prediction => {
       if (prediction.actualHits && prediction.predictedHitsSoFar) {
@@ -193,14 +187,32 @@ export function ChartAreaInteractive() {
         const error = ((prediction.predictedHitsSoFar - prediction.actualHits) / prediction.actualHits) * 100
         
         // Find the appropriate bin
-        const bin = bins.find(bin => error >= bin.min && error < bin.max)
-        if (bin) {
-          bin.count += 1
+        for (let i = 0; i < boundaries.length - 1; i++) {
+          if (error >= boundaries[i] && error < boundaries[i + 1]) {
+            binCounts[i] += 1;
+            break;
+          }
         }
       }
     })
 
-    return bins
+    // Format data for the chart
+    const chartData = [];
+    for (let i = 0; i < boundaries.length; i++) {
+      // Skip the last boundary in label creation (it's Infinity)
+      if (i < boundaries.length - 1) {
+        const label = boundaries[i] === -100 ? "-100%" :
+                     boundaries[i + 1] === Infinity ? "75%+" : 
+                     `${boundaries[i]}%`;
+        
+        chartData.push({
+          boundary: label,
+          count: i < binCounts.length ? binCounts[i] : 0
+        });
+      }
+    }
+
+    return chartData;
   }
 
   const chartData = formatChartData()
@@ -209,7 +221,7 @@ export function ChartAreaInteractive() {
 
   // Config for histogram chart
   const histogramConfig = {
-    errorCount: {
+    count: {
       label: 'Number of Students',
       color: 'var(--color-blue)',
     }
@@ -371,15 +383,16 @@ export function ChartAreaInteractive() {
               <BarChart data={histogramData}>
                 <CartesianGrid vertical={false} />
                 <XAxis
-                  dataKey="range"
+                  dataKey="boundary"
                   tickLine={false}
                   axisLine={false}
                   tickMargin={10}
                   interval={0}
-                  angle={-30}
+                  angle={-20}
                   textAnchor="end"
-                  height={60}
+                  height={50}
                   fontSize={12}
+                  scale="band"
                 />
                 <YAxis
                   allowDecimals={false}
@@ -391,7 +404,7 @@ export function ChartAreaInteractive() {
                   cursor={false}
                   content={<ChartTooltipContent hideLabel />}
                 />
-                <Bar dataKey="count" name="Number of Students" fill="var(--color-blue)" radius={4} />
+                <Bar dataKey="count" name="Number of Students" fill="var(--color-blue)" radius={4} barSize={45} />
               </BarChart>
             </ChartContainer>
           )}
