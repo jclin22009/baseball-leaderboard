@@ -329,22 +329,6 @@ export function DataTable({
       onValueChange={(value) => setActiveTab(value)}
     >
       <div className="flex items-center justify-between px-4 lg:px-6">
-        <Label htmlFor="view-selector" className="sr-only">
-          View
-        </Label>
-        <Select defaultValue="top-by-percent">
-          <SelectTrigger
-            className="flex w-fit @4xl/main:hidden"
-            size="sm"
-            id="view-selector"
-          >
-            <SelectValue placeholder="Select a view" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="top-by-percent">Top (by percent)</SelectItem>
-            <SelectItem value="top-by-number">Top (by number)</SelectItem>
-          </SelectContent>
-        </Select>
         <div className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
