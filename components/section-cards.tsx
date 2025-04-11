@@ -48,12 +48,36 @@ export function SectionCards() {
     // Sort a copy of the predictions array to avoid mutating the original
     const sortedByAccuracy = [...predictions]
       .filter(p => p.percentageOff !== null)
-      .sort((a, b) => (a.percentageOff ?? Infinity) - (b.percentageOff ?? Infinity));
+      .sort((a, b) => {
+        // Handle infinite cases (actual hits = 0)
+        if (a.actualHits === 0 && (a.predictedHitsSoFar ?? 0) > 0) {
+          return 1; // a is "worst"
+        }
+        if (b.actualHits === 0 && (b.predictedHitsSoFar ?? 0) > 0) {
+          return -1; // b is "worst"
+        }
+        // Normal comparison
+        return (a.percentageOff ?? Infinity) - (b.percentageOff ?? Infinity);
+      });
     
     // Get worst prediction (highest percentage off)
     const worstPrediction = [...predictions]
       .filter(p => p.percentageOff !== null)
-      .sort((a, b) => (b.percentageOff ?? 0) - (a.percentageOff ?? 0))[0];
+      .sort((a, b) => {
+        // Handle infinite cases first (actual hits = 0)
+        if (a.actualHits === 0 && (a.predictedHitsSoFar ?? 0) > 0) {
+          if (b.actualHits === 0 && (b.predictedHitsSoFar ?? 0) > 0) {
+            // If both are infinity, sort by predicted hits (higher is worse)
+            return (b.predictedHitsSoFar ?? 0) - (a.predictedHitsSoFar ?? 0);
+          }
+          return -1; // a is "worst" (infinity)
+        }
+        if (b.actualHits === 0 && (b.predictedHitsSoFar ?? 0) > 0) {
+          return 1; // b is "worst" (infinity)
+        }
+        // Normal comparison
+        return (b.percentageOff ?? 0) - (a.percentageOff ?? 0);
+      })[0];
     
     // Return exactly 4 predictions
     return [
@@ -82,6 +106,9 @@ export function SectionCards() {
         // Extract first name
         const firstName = prediction.student.split(' ')[0];
         
+        // Check for infinity case (0 actual hits but predicted hits > 0)
+        const isInfinite = prediction.actualHits === 0 && (prediction.predictedHitsSoFar ?? 0) > 0;
+        
         return (
           <Card key={prediction.id} className="@container/card">
             <CardHeader>
@@ -91,10 +118,12 @@ export function SectionCards() {
               </CardTitle>
               <CardAction>
                 <Badge variant="outline">
-                  {prediction.percentageOff !== null && (
-                    <>
-                      ±{prediction.percentageOff}%
-                    </>
+                  {isInfinite ? (
+                    <>∞</>
+                  ) : (
+                    prediction.percentageOff !== null && (
+                      <>±{prediction.percentageOff}%</>
+                    )
                   )}
                 </Badge>
               </CardAction>
@@ -104,7 +133,7 @@ export function SectionCards() {
                 Guessed {prediction.predictedHits} hits → {prediction.predictedHitsSoFar ?? 0} to date
               </div>
               <div className="text-muted-foreground">
-                For player {prediction.player}
+                {prediction.player} is at {prediction.actualHits} hits
               </div>
             </CardFooter>
           </Card>
