@@ -5,6 +5,8 @@ import {
   IconChartBar,
   IconHelp,
 } from "@tabler/icons-react"
+import { usePathname } from "next/navigation"
+import Link from "next/link"
 
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
@@ -18,28 +20,31 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 
-const data = {
-  user: {
-    name: "CS47N: Datathletics",
-    email: "Spring 2025",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  navMain: [
-    {
-      title: "Leaderboard",
-      url: "#",
-      icon: IconChartBar,
-      isActive: true,
-    },
-    {
-      title: "About",
-      url: "#",
-      icon: IconHelp,
-    },
-  ],
-}
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const pathname = usePathname()
+  
+  const data = {
+    user: {
+      name: "CS47N: Datathletics",
+      email: "Spring 2025",
+      avatar: "/avatars/shadcn.jpg",
+    },
+    navMain: [
+      {
+        title: "Leaderboard",
+        url: "/",
+        icon: IconChartBar,
+        isActive: pathname === "/",
+      },
+      {
+        title: "About",
+        url: "/about",
+        icon: IconHelp,
+        isActive: pathname === "/about",
+      },
+    ],
+  }
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -49,10 +54,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <a href="#">
+              <Link href="/">
                 <span className="text-xl mr-1">⚾</span>
                 <span className="text-base font-semibold">Baseball Predictions</span>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

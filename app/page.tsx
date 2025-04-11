@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { z } from "zod"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function Home() {
   const [data, setData] = useState<z.infer<typeof schema>[]>([]);
@@ -51,13 +52,17 @@ export default function Home() {
               <div className="px-4 lg:px-6">
                 <ChartAreaInteractive />
               </div>
-              <Card>
+              <Card className="mx-4 lg:mx-6">
                 <CardHeader>
                   <CardTitle>Baseball Predictions Leaderboard</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {loading ? (
-                    <p>Loading predictions...</p>
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-full" />
+                    </div>
                   ) : (
                     <DataTable data={data} />
                   )}
