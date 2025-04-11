@@ -20,13 +20,9 @@ export async function GET(request: NextRequest) {
     const data = await response.json();
 
     // Navigate the structure safely
-    const hits = data?.people?.[0]?.stats?.[0]?.splits?.[0]?.stat?.hits;
+    const hits = data?.people?.[0]?.stats?.[0]?.splits?.[0]?.stat?.hits ?? 0;
 
-    if (hits === undefined || hits === null) {
-       // Handle cases where the stats structure might be different or missing for the season/player
-      return NextResponse.json({ hits: 0, message: `No hitting stats found for player ${playerId} in season ${season}` });
-    }
-
+    // Always return hits as a number, defaulting to 0 if undefined/null
     return NextResponse.json({ hits });
   } catch (error) {
     console.error("Error fetching MLB data:", error);

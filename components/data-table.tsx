@@ -170,28 +170,44 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
       </div>
     ),
     cell: ({ row }) => (
-      <div>{row.original.predictedHitsSoFar != null ? row.original.predictedHitsSoFar.toFixed(1) : "-"}</div>
+      <div>{row.original.predictedHitsSoFar != null ? row.original.predictedHitsSoFar.toFixed(1) : "0.0"}</div>
     ),
   },
   {
     accessorKey: "actualHits",
     header: "Actual Hits",
     cell: ({ row }) => (
-      <div>{row.original.actualHits || "-"}</div>
+      <div>{row.original.actualHits !== null && row.original.actualHits !== undefined ? row.original.actualHits : 0}</div>
     ),
   },
   {
     accessorKey: "percentageOff",
     header: "Prediction Delta",
     cell: ({ row }) => {
-      if (row.original.actualHits && row.original.percentageOff != null) {
-        return <div>{row.original.percentageOff.toFixed(2)}%</div>;
+      // For cases with 0 actual hits, show infinity symbol
+      if (row.original.actualHits === 0 && (row.original.predictedHitsSoFar ?? 0) > 0) {
+        return <div>∞</div>;
       }
-      return <div className="text-gray-400">-</div>;
+      // For other cases show the calculated percentage
+      return <div>{row.original.percentageOff != null ? row.original.percentageOff.toFixed(2) + "%" : "0.00%"}</div>;
     },
     sortingFn: (rowA, rowB) => {
       const valueA = rowA.original.percentageOff;
       const valueB = rowB.original.percentageOff;
+      
+      // Handle infinity cases (when actual hits is 0)
+      if (rowA.original.actualHits === 0 && (rowA.original.predictedHitsSoFar ?? 0) > 0) {
+        // If both have 0 actual hits, compare by predicted hits
+        if (rowB.original.actualHits === 0 && (rowB.original.predictedHitsSoFar ?? 0) > 0) {
+          return (rowB.original.predictedHitsSoFar ?? 0) - (rowA.original.predictedHitsSoFar ?? 0);
+        }
+        // Infinity is always greater than any percentage
+        return 1;
+      }
+      
+      if (rowB.original.actualHits === 0 && (rowB.original.predictedHitsSoFar ?? 0) > 0) {
+        return -1; // B is infinity, so B is greater
+      }
       
       // If neither has percentage data, maintain original order
       if (valueA == null && valueB == null) return 0;
@@ -702,16 +718,20 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
                 <Label htmlFor="predictedHitsSoFar">Predicted Hits (So Far)</Label>
-                <Input id="predictedHitsSoFar" defaultValue={item.predictedHitsSoFar != null ? item.predictedHitsSoFar.toFixed(1) : ""} />
+                <Input id="predictedHitsSoFar" defaultValue={item.predictedHitsSoFar != null ? item.predictedHitsSoFar.toFixed(1) : "0.0"} />
               </div>
               <div className="flex flex-col gap-3">
                 <Label htmlFor="actualHits">Actual Hits</Label>
-                <Input id="actualHits" defaultValue={item.actualHits || ""} />
+                <Input id="actualHits" defaultValue={item.actualHits !== null && item.actualHits !== undefined ? item.actualHits : 0} />
               </div>
             </div>
             <div className="flex flex-col gap-3">
               <Label htmlFor="percentageOff">Prediction Delta</Label>
-              <Input id="percentageOff" defaultValue={item.percentageOff != null ? item.percentageOff.toFixed(2) + "%" : ""} />
+              <Input id="percentageOff" defaultValue={
+                item.actualHits === 0 && (item.predictedHitsSoFar ?? 0) > 0 
+                  ? "∞" 
+                  : (item.percentageOff != null ? item.percentageOff.toFixed(2) + "%" : "0.00%")
+              } />
             </div>
           </form>
         </div>
@@ -761,13 +781,12 @@ export async function loadPredictionsData() {
         // Step 1: Get player ID from player name
         const playerName = record.baseball_player;
         let playerId: string | null = null;
-        let actualHits: number | null = null;
-        let percentageOff: number | null = null;
+        let actualHits = 0; // Default to 0 instead of null
+        let percentageOff = 0; // Default to 0 instead of null
         const predictedHits = parseInt(record.predicted_hits, 10);
         
         // Calculate predicted hits so far based on season proportion
-        // Ensure this is null if seasonProportion is 0
-        const predictedHitsSoFar = seasonProportion > 0 ? Number((predictedHits * seasonProportion).toFixed(1)) : null;
+        const predictedHitsSoFar = seasonProportion > 0 ? Number((predictedHits * seasonProportion).toFixed(1)) : 0;
         
         try {
           const playerIdResponse = await fetch(`/api/get-player-id?fullname=${encodeURIComponent(playerName)}`);
@@ -783,7 +802,11 @@ export async function loadPredictionsData() {
                 actualHits = hitsData.hits;
                 
                 // Step 3: Calculate percentage off
-                if (actualHits !== null && actualHits > 0 && predictedHitsSoFar !== null) {
+                if (actualHits === 0) {
+                  // For 0 actual hits, we'll display infinity in the UI
+                  // We'll set a very high percentage (Infinity would cause issues in JSON)
+                  percentageOff = predictedHitsSoFar > 0 ? 999999 : 0;
+                } else {
                   // Calculate absolute difference as a percentage of actual hits
                   const diff = Math.abs(predictedHitsSoFar - actualHits);
                   percentageOff = Number(((diff / actualHits) * 100).toFixed(2));
