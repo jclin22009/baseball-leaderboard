@@ -1,5 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Define proper interfaces for MLB API responses
+interface RosterPlayer {
+  person: {
+    id: number;
+    fullName: string;
+  };
+}
+
+interface PlayerGameLog {
+  date: string;
+  stat: {
+    hits?: number;
+  };
+}
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const teamId = searchParams.get('teamId') || '137'; // Default to SF Giants (137)
@@ -22,7 +37,7 @@ export async function GET(request: NextRequest) {
     const rosterData = await rosterResponse.json();
     
     // Get all player IDs from the roster
-    const playerIds = rosterData.roster.map((player: any) => player.person.id);
+    const playerIds = rosterData.roster.map((player: RosterPlayer) => player.person.id);
     
     // Get hitting stats for each player
     const playerStatsPromises = playerIds.map(async (playerId: number) => {
@@ -80,7 +95,7 @@ export async function GET(request: NextRequest) {
         const gameLogs = gameLogData.stats?.[0]?.splits || [];
         
         // Extract date and hits from each game
-        const hitsByDate = gameLogs.map((game: any) => ({
+        const hitsByDate = gameLogs.map((game: PlayerGameLog) => ({
           date: game.date,
           hits: game.stat?.hits || 0
         }));
