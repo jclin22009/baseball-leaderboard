@@ -12,7 +12,7 @@ export const MLB_CONSTANTS = {
   getDaysElapsed: () => {
     const seasonStartDate = new Date('2025-03-27');
     const currentDate = new Date();
-    const diffTime = Math.abs(currentDate - seasonStartDate);
+    const diffTime = Math.abs(currentDate.getTime() - seasonStartDate.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   },
