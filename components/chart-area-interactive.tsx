@@ -171,20 +171,20 @@ export function ChartAreaInteractive() {
       return []
     }
 
-    // Define bin boundaries
-    const boundaries = [-100, -75, -50, -25, 0, 25, 50, 75, Infinity];
+    // Define bin boundaries for absolute errors (0%, 10%, 20%, etc.)
+    const boundaries = [0, 10, 20, 30, 40, 50, 75, 100, Infinity];
     
     // Initialize bin counts
     const binCounts = Array(boundaries.length - 1).fill(0);
     
-    // Calculate the actual signed error (not absolute)
+    // Calculate the absolute error percentages
     predictionsData.forEach(prediction => {
       if (prediction.actualHits && prediction.predictedHitsSoFar) {
         // Skip cases where actual hits is 0 (would be infinity)
         if (prediction.actualHits === 0) return
 
-        // Calculate signed error percentage
-        const error = ((prediction.predictedHitsSoFar - prediction.actualHits) / prediction.actualHits) * 100
+        // Calculate absolute error percentage
+        const error = Math.abs(((prediction.predictedHitsSoFar - prediction.actualHits) / prediction.actualHits) * 100)
         
         // Find the appropriate bin
         for (let i = 0; i < boundaries.length - 1; i++) {
@@ -198,18 +198,13 @@ export function ChartAreaInteractive() {
 
     // Format data for the chart
     const chartData = [];
-    for (let i = 0; i < boundaries.length; i++) {
-      // Skip the last boundary in label creation (it's Infinity)
-      if (i < boundaries.length - 1) {
-        const label = boundaries[i] === -100 ? "-100%" :
-                     boundaries[i + 1] === Infinity ? "75%+" : 
-                     `${boundaries[i]}%`;
-        
-        chartData.push({
-          boundary: label,
-          count: i < binCounts.length ? binCounts[i] : 0
-        });
-      }
+    for (let i = 0; i < boundaries.length - 1; i++) {
+      const label = boundaries[i + 1] === Infinity ? "100%+" : `${boundaries[i]}%`;
+      
+      chartData.push({
+        boundary: label,
+        count: binCounts[i]
+      });
     }
 
     return chartData;
@@ -388,7 +383,7 @@ export function ChartAreaInteractive() {
                   axisLine={false}
                   tickMargin={10}
                   interval={0}
-                  angle={-20}
+                  angle={-30}
                   textAnchor="end"
                   height={50}
                   fontSize={12}

@@ -30,6 +30,7 @@ import {
   IconLayoutColumns,
   IconInfoCircle,
   IconCopy,
+  IconCheck,
 } from "@tabler/icons-react";
 import {
   ColumnDef,
@@ -91,6 +92,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { toast } from "sonner";
 
 export const schema = z.object({
   id: z.number(),
@@ -419,7 +421,17 @@ export function DataTable({
         })
       ]);
       
-      // Provide feedback (you could add a toast notification here)
+      // Show success toast notification
+      toast.success("Top guesses copied to clipboard", {
+        description: "The formatted table can be pasted into documents",
+        action: {
+          label: "Dismiss",
+          onClick: () => {}
+        },
+        icon: <IconCheck className="h-4 w-4" />,
+        duration: 3000
+      });
+      
       console.log("Copied top 5 guesses to clipboard as formatted table");
     } catch (error) {
       console.error("Failed to copy: ", error);
@@ -447,9 +459,22 @@ export function DataTable({
         
         // Use the basic clipboard API
         await navigator.clipboard.writeText(tableText);
+        
+        // Show success toast notification (fallback method)
+        toast.success("Top guesses copied to clipboard", {
+          description: "Using fallback method - formatting may be limited",
+          duration: 3000
+        });
+        
         console.log("Copied top 5 guesses to clipboard using fallback method");
       } catch (fallbackError) {
         console.error("Clipboard fallback also failed:", fallbackError);
+        
+        // Show error toast notification
+        toast.error("Failed to copy to clipboard", {
+          description: "Please try again or copy manually",
+          duration: 5000
+        });
       }
     }
   };
