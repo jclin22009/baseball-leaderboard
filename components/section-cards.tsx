@@ -12,6 +12,13 @@ import {
 import { useState, useEffect } from "react";
 import { loadPredictionsData } from "@/components/data-table";
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { IconInfoCircle } from "@tabler/icons-react";
+import { Button } from "@/components/ui/button";
 
 interface Prediction {
   id: number;
@@ -149,7 +156,21 @@ export function SectionCards() {
             </CardHeader>
             <CardFooter className="flex-col items-start gap-1.5 text-sm">
               <div className="line-clamp-1 flex gap-2 font-medium">
-                Guessed {prediction.predictedHits} hits → {prediction.predictedHitsSoFar ?? 0} to date
+                Guessed {prediction.predictedHits} hits →{" "}
+                <span className="flex items-center">
+                  {prediction.predictedHitsSoFar ?? 0} to date
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" className="ml-1 h-4 w-4 p-0">
+                        <IconInfoCircle className="h-3 w-3 text-muted-foreground" />
+                        <span className="sr-only">Info</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p>Calculated based on the proportion of MLB games completed so far in the season, not calendar time. This provides a more accurate measure of expected hits at this point in the season.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </span>
               </div>
               <div className="text-muted-foreground">
                 {prediction.player} is at {prediction.actualHits} hits

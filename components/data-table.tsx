@@ -28,6 +28,7 @@ import {
   IconChevronsRight,
   IconGripVertical,
   IconLayoutColumns,
+  IconInfoCircle,
 } from "@tabler/icons-react";
 import {
   ColumnDef,
@@ -84,6 +85,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export const schema = z.object({
   id: z.number(),
@@ -167,6 +173,17 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     header: () => (
       <div className="flex items-center whitespace-nowrap">
         Predicted Hits <Badge variant="outline" className="ml-2">To Date</Badge>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className="ml-1 h-5 w-5 p-0">
+              <IconInfoCircle className="h-4 w-4 text-muted-foreground" />
+              <span className="sr-only">Info</span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent className="max-w-xs">
+            <p>Calculated based on the proportion of MLB games completed so far in the season, not calendar time. This provides a more accurate measure of expected hits at this point in the season.</p>
+          </TooltipContent>
+        </Tooltip>
       </div>
     ),
     cell: ({ row }) => (
@@ -727,6 +744,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 // Function to load data from predictions.csv
 export async function loadPredictionsData() {
   try {
+    console.log("Loading predictions data...");
     // Since we're in a client component, we need to fetch the data
     const response = await fetch('/predictions.csv');
     const csvText = await response.text();
@@ -743,8 +761,9 @@ export async function loadPredictionsData() {
       }, {} as Record<string, string>);
     });
     
-    // Calculate the proportion of the season that has elapsed
+    // Calculate the proportion of the season that has elapsed (OLD METHOD)
     const today = new Date();
+    console.log(`Current date: ${today.toISOString()}`);
     const seasonStart = new Date('2025-03-27');
     const seasonEnd = new Date('2025-09-28');
     
@@ -752,6 +771,64 @@ export async function loadPredictionsData() {
     const elapsedTime = Math.max(0, today.getTime() - seasonStart.getTime());
     const totalSeasonTime = seasonEnd.getTime() - seasonStart.getTime();
     const seasonProportion = elapsedTime / totalSeasonTime;
+    console.log(`OLD METHOD - Time-based proportion: ${(seasonProportion * 100).toFixed(2)}%`);
+    
+    // NEW METHOD: Get MLB schedule data to calculate games completed proportion
+    let gamesProportion = 0;
+    try {
+      console.log("Fetching MLB schedule data...");
+      const scheduleUrl = 'https://statsapi.mlb.com/api/v1/schedule?hydrate=team,lineups&sportId=1&startDate=2025-03-27&endDate=2025-05-31&teamId=137';
+      console.log(`Schedule URL: ${scheduleUrl}`);
+      
+      const scheduleResponse = await fetch(scheduleUrl);
+      console.log(`Schedule API response status: ${scheduleResponse.status}`);
+      
+      const scheduleData = await scheduleResponse.json();
+      
+      // Get total games in the season
+      const totalGames = scheduleData.totalGames;
+      console.log(`Total games in season: ${totalGames}`);
+      
+      // Calculate games completed so far
+      let gamesCompleted = 0;
+      
+      // Count games that have already been played (before today)
+      if (scheduleData.dates) {
+        console.log(`Found ${scheduleData.dates.length} date entries in schedule`);
+        
+        for (const dateEntry of scheduleData.dates) {
+          const gameDate = new Date(dateEntry.date);
+          console.log(`Checking date: ${dateEntry.date}, games on this date: ${dateEntry.totalGames}`);
+          
+          if (gameDate < today) {
+            // Add the games for this date
+            gamesCompleted += dateEntry.totalGames;
+            console.log(`Date ${dateEntry.date} is in the past, adding ${dateEntry.totalGames} games`);
+          } else {
+            console.log(`Date ${dateEntry.date} is in the future, skipping`);
+          }
+        }
+      } else {
+        console.log("No dates found in schedule data");
+      }
+      
+      // Calculate proportion of games completed
+      gamesProportion = totalGames > 0 ? gamesCompleted / totalGames : 0;
+      console.log(`NEW METHOD - Games completed: ${gamesCompleted}/${totalGames}`);
+      console.log(`NEW METHOD - Games-based proportion: ${(gamesProportion * 100).toFixed(2)}%`);
+      
+      // Use the games-based proportion for calculations
+      // But if we're testing and it's 0, use the time-based approach
+      if (gamesProportion === 0 && seasonProportion > 0) {
+        console.log("Using time-based proportion for testing since games proportion is 0");
+        gamesProportion = seasonProportion;
+      }
+    } catch (error) {
+      console.error('Error fetching MLB schedule data:', error);
+      // Fall back to the old calculation method if API fails
+      gamesProportion = seasonProportion;
+      console.log(`Falling back to time-based proportion: ${(gamesProportion * 100).toFixed(2)}%`);
+    }
     
     // Process each record with player IDs and hit data
     const recordsWithStats = await Promise.all(
@@ -763,8 +840,15 @@ export async function loadPredictionsData() {
         let percentageOff = 0; // Default to 0 instead of null
         const predictedHits = parseInt(record.predicted_hits, 10);
         
-        // Calculate predicted hits so far based on season proportion
-        const predictedHitsSoFar = seasonProportion > 0 ? Number((predictedHits * seasonProportion).toFixed(1)) : 0;
+        // Calculate predicted hits so far based on games proportion (not time proportion)
+        const predictedHitsSoFar = gamesProportion > 0 ? Number((predictedHits * gamesProportion).toFixed(1)) : 0;
+        
+        if (index === 0) {
+          console.log(`Example calculation for ${playerName}:`);
+          console.log(`- Predicted hits (season): ${predictedHits}`);
+          console.log(`- Games proportion: ${gamesProportion.toFixed(4)}`);
+          console.log(`- Predicted hits so far: ${predictedHitsSoFar}`);
+        }
         
         try {
           const playerIdResponse = await fetch(`/api/get-player-id?fullname=${encodeURIComponent(playerName)}`);
