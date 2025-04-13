@@ -29,6 +29,7 @@ import {
   IconGripVertical,
   IconLayoutColumns,
   IconInfoCircle,
+  IconCopy,
 } from "@tabler/icons-react";
 import {
   ColumnDef,
@@ -181,7 +182,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
             </Button>
           </TooltipTrigger>
           <TooltipContent className="max-w-xs">
-            <p>Calculated based on the proportion of MLB games completed so far in the season, not calendar time. This provides a more accurate measure of expected hits at this point in the season.</p>
+            <p>Calculated based on the proportion of MLB games completed so far in the season. This provides a relatively accurate measure of expected hits at a given point in the season.</p>
           </TooltipContent>
         </Tooltip>
       </div>
@@ -339,6 +340,120 @@ export function DataTable({
     }
   }
 
+  // Function to copy top 5 guesses to clipboard
+  const copyTopGuesses = async () => {
+    try {
+      // Get the sorted rows
+      const sortedRows = table.getSortedRowModel().rows;
+      // Take the top 5 rows
+      const top5Rows = sortedRows.slice(0, 5);
+      
+      // Create HTML table for rich formatting
+      let htmlTable = `
+        <table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse;">
+          <thead style="background-color: #f3f4f6;">
+            <tr>
+              <th align="center">Rank</th>
+              <th align="left">Student</th>
+              <th align="left">Player</th>
+              <th align="center">Predicted Hits</th>
+              <th align="center">Predicted (To Date)</th>
+              <th align="center">Actual Hits</th>
+              <th align="center">Delta</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+      
+      // Add each row to HTML table
+      top5Rows.forEach((row, index) => {
+        const original = row.original;
+        const delta = original.actualHits === 0 && (original.predictedHitsSoFar ?? 0) > 0 
+          ? "∞" 
+          : `${original.percentageOff?.toFixed(2)}%`;
+        
+        htmlTable += `
+          <tr>
+            <td align="center">${index + 1}</td>
+            <td align="left">${original.student}</td>
+            <td align="left">${original.player}</td>
+            <td align="center">${original.predictedHits}</td>
+            <td align="center">${original.predictedHitsSoFar?.toFixed(1) || "0.0"}</td>
+            <td align="center">${original.actualHits || 0}</td>
+            <td align="center">${delta}</td>
+          </tr>
+        `;
+      });
+      
+      // Close the HTML table and add explanation
+      htmlTable += `
+          </tbody>
+        </table>
+        <p style="font-style: italic; font-size: 0.9em; margin-top: 10px;">
+          Predicted hits (to date) are calculated based on the proportion of MLB games completed so far in the season (until our end date May 31). 
+          This provides a relatively accurate measure of expected hits at this point in the season.
+        </p>
+      `;
+      
+      // Also create a plain text version as fallback
+      let plainText = "Rank\tStudent\tPlayer\tPredicted Hits\tPredicted (To Date)\tActual Hits\tDelta\n";
+      plainText += "----\t-------\t------\t--------------\t------------------\t-----------\t-----\n";
+      
+      top5Rows.forEach((row, index) => {
+        const original = row.original;
+        const delta = original.actualHits === 0 && (original.predictedHitsSoFar ?? 0) > 0 
+          ? "∞" 
+          : `${original.percentageOff?.toFixed(2)}%`;
+        
+        plainText += `${index + 1}\t${original.student}\t${original.player}\t${original.predictedHits}\t${original.predictedHitsSoFar?.toFixed(1) || "0.0"}\t${original.actualHits || 0}\t${delta}\n`;
+      });
+      
+      plainText += "\nPredicted hits (to date) are calculated based on the proportion of MLB games completed so far in the season (until our end date May 31). This provides a relatively accurate measure of expected hits at this point in the season.";
+      
+      // Copy to clipboard as both HTML and plain text
+      // This allows rich pasting in apps like Google Docs but fallback to plain text elsewhere
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'text/html': new Blob([htmlTable], { type: 'text/html' }),
+          'text/plain': new Blob([plainText], { type: 'text/plain' })
+        })
+      ]);
+      
+      // Provide feedback (you could add a toast notification here)
+      console.log("Copied top 5 guesses to clipboard as formatted table");
+    } catch (error) {
+      console.error("Failed to copy: ", error);
+      // Fallback to basic plain text clipboard API if the newer API fails
+      try {
+        // Get the sorted rows
+        const sortedRows = table.getSortedRowModel().rows;
+        // Take the top 5 rows
+        const top5Rows = sortedRows.slice(0, 5);
+        
+        // Format data as a table with headers (plain text fallback)
+        let tableText = "Rank\tStudent\tPlayer\tPredicted Hits\tPredicted (To Date)\tActual Hits\tDelta\n";
+        tableText += "----\t-------\t------\t--------------\t------------------\t-----------\t-----\n";
+        
+        top5Rows.forEach((row, index) => {
+          const original = row.original;
+          const delta = original.actualHits === 0 && (original.predictedHitsSoFar ?? 0) > 0 
+            ? "∞" 
+            : `${original.percentageOff?.toFixed(2)}%`;
+          
+          tableText += `${index + 1}\t${original.student}\t${original.player}\t${original.predictedHits}\t${original.predictedHitsSoFar?.toFixed(1) || "0.0"}\t${original.actualHits || 0}\t${delta}\n`;
+        });
+        
+        tableText += "\nPredicted hits (to date) are calculated based on the proportion of MLB games completed so far in the season (until our end date May 31). This provides a relatively accurate measure of expected hits at this point in the season.";
+        
+        // Use the basic clipboard API
+        await navigator.clipboard.writeText(tableText);
+        console.log("Copied top 5 guesses to clipboard using fallback method");
+      } catch (fallbackError) {
+        console.error("Clipboard fallback also failed:", fallbackError);
+      }
+    }
+  };
+
   return (
     <Tabs
       defaultValue="top-by-percent"
@@ -380,6 +495,10 @@ export function DataTable({
                 })}
             </DropdownMenuContent>
           </DropdownMenu>
+          <Button variant="outline" size="sm" onClick={copyTopGuesses}>
+            <IconCopy className="mr-1 h-4 w-4" />
+            <span>Copy top guesses</span>
+          </Button>
         </div>
       </div>
       <TabsContent
