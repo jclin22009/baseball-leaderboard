@@ -167,7 +167,7 @@ export function SectionCards() {
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
-                      <p>Calculated based on the proportion of MLB games completed so far in the season. This provides a relatively accurate measure of expected hits at a given point in the season.</p>
+                      <p>Calculated based on the proportion of MLB games completed so far in the season.</p>
                     </TooltipContent>
                   </Tooltip>
                 </span>

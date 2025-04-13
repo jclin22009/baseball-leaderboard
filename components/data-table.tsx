@@ -29,8 +29,6 @@ import {
   IconGripVertical,
   IconLayoutColumns,
   IconInfoCircle,
-  IconCopy,
-  IconCheck,
 } from "@tabler/icons-react";
 import {
   ColumnDef,
@@ -92,7 +90,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { toast } from "sonner";
 
 export const schema = z.object({
   id: z.number(),
@@ -184,7 +181,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
             </Button>
           </TooltipTrigger>
           <TooltipContent className="max-w-xs">
-            <p>Calculated based on the proportion of MLB games completed so far in the season. This provides a relatively accurate measure of expected hits at a given point in the season.</p>
+            <p>Calculated based on the proportion of MLB games completed so far in the season.</p>
           </TooltipContent>
         </Tooltip>
       </div>
@@ -342,143 +339,6 @@ export function DataTable({
     }
   }
 
-  // Function to copy top 5 guesses to clipboard
-  const copyTopGuesses = async () => {
-    try {
-      // Get the sorted rows
-      const sortedRows = table.getSortedRowModel().rows;
-      // Take the top 5 rows
-      const top5Rows = sortedRows.slice(0, 5);
-      
-      // Create HTML table for rich formatting
-      let htmlTable = `
-        <table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse;">
-          <thead style="background-color: #f3f4f6;">
-            <tr>
-              <th align="center">Rank</th>
-              <th align="left">Student</th>
-              <th align="left">Player</th>
-              <th align="center">Predicted Hits</th>
-              <th align="center">Predicted (To Date)</th>
-              <th align="center">Actual Hits</th>
-              <th align="center">Delta</th>
-            </tr>
-          </thead>
-          <tbody>
-      `;
-      
-      // Add each row to HTML table
-      top5Rows.forEach((row, index) => {
-        const original = row.original;
-        const delta = original.actualHits === 0 && (original.predictedHitsSoFar ?? 0) > 0 
-          ? "∞" 
-          : `${original.percentageOff?.toFixed(2)}%`;
-        
-        htmlTable += `
-          <tr>
-            <td align="center">${index + 1}</td>
-            <td align="left">${original.student}</td>
-            <td align="left">${original.player}</td>
-            <td align="center">${original.predictedHits}</td>
-            <td align="center">${original.predictedHitsSoFar?.toFixed(1) || "0.0"}</td>
-            <td align="center">${original.actualHits || 0}</td>
-            <td align="center">${delta}</td>
-          </tr>
-        `;
-      });
-      
-      // Close the HTML table and add explanation
-      htmlTable += `
-          </tbody>
-        </table>
-        <p style="font-style: italic; font-size: 0.9em; margin-top: 10px;">
-          Predicted hits (to date) are calculated based on the proportion of MLB games completed so far in the season (until our end date May 31). 
-          This provides a relatively accurate measure of expected hits at this point in the season.
-        </p>
-      `;
-      
-      // Also create a plain text version as fallback
-      let plainText = "Rank\tStudent\tPlayer\tPredicted Hits\tPredicted (To Date)\tActual Hits\tDelta\n";
-      plainText += "----\t-------\t------\t--------------\t------------------\t-----------\t-----\n";
-      
-      top5Rows.forEach((row, index) => {
-        const original = row.original;
-        const delta = original.actualHits === 0 && (original.predictedHitsSoFar ?? 0) > 0 
-          ? "∞" 
-          : `${original.percentageOff?.toFixed(2)}%`;
-        
-        plainText += `${index + 1}\t${original.student}\t${original.player}\t${original.predictedHits}\t${original.predictedHitsSoFar?.toFixed(1) || "0.0"}\t${original.actualHits || 0}\t${delta}\n`;
-      });
-      
-      plainText += "\nPredicted hits (to date) are calculated based on the proportion of MLB games completed so far in the season (until our end date May 31). This provides a relatively accurate measure of expected hits at this point in the season.";
-      
-      // Copy to clipboard as both HTML and plain text
-      // This allows rich pasting in apps like Google Docs but fallback to plain text elsewhere
-      await navigator.clipboard.write([
-        new ClipboardItem({
-          'text/html': new Blob([htmlTable], { type: 'text/html' }),
-          'text/plain': new Blob([plainText], { type: 'text/plain' })
-        })
-      ]);
-      
-      // Show success toast notification
-      toast.success("Top guesses copied to clipboard", {
-        description: "The formatted table can be pasted into documents",
-        action: {
-          label: "Dismiss",
-          onClick: () => {}
-        },
-        icon: <IconCheck className="h-4 w-4" />,
-        duration: 3000
-      });
-      
-      console.log("Copied top 5 guesses to clipboard as formatted table");
-    } catch (error) {
-      console.error("Failed to copy: ", error);
-      // Fallback to basic plain text clipboard API if the newer API fails
-      try {
-        // Get the sorted rows
-        const sortedRows = table.getSortedRowModel().rows;
-        // Take the top 5 rows
-        const top5Rows = sortedRows.slice(0, 5);
-        
-        // Format data as a table with headers (plain text fallback)
-        let tableText = "Rank\tStudent\tPlayer\tPredicted Hits\tPredicted (To Date)\tActual Hits\tDelta\n";
-        tableText += "----\t-------\t------\t--------------\t------------------\t-----------\t-----\n";
-        
-        top5Rows.forEach((row, index) => {
-          const original = row.original;
-          const delta = original.actualHits === 0 && (original.predictedHitsSoFar ?? 0) > 0 
-            ? "∞" 
-            : `${original.percentageOff?.toFixed(2)}%`;
-          
-          tableText += `${index + 1}\t${original.student}\t${original.player}\t${original.predictedHits}\t${original.predictedHitsSoFar?.toFixed(1) || "0.0"}\t${original.actualHits || 0}\t${delta}\n`;
-        });
-        
-        tableText += "\nPredicted hits (to date) are calculated based on the proportion of MLB games completed so far in the season (until our end date May 31). This provides a relatively accurate measure of expected hits at this point in the season.";
-        
-        // Use the basic clipboard API
-        await navigator.clipboard.writeText(tableText);
-        
-        // Show success toast notification (fallback method)
-        toast.success("Top guesses copied to clipboard", {
-          description: "Using fallback method - formatting may be limited",
-          duration: 3000
-        });
-        
-        console.log("Copied top 5 guesses to clipboard using fallback method");
-      } catch (fallbackError) {
-        console.error("Clipboard fallback also failed:", fallbackError);
-        
-        // Show error toast notification
-        toast.error("Failed to copy to clipboard", {
-          description: "Please try again or copy manually",
-          duration: 5000
-        });
-      }
-    }
-  };
-
   return (
     <Tabs
       defaultValue="top-by-percent"
@@ -520,10 +380,6 @@ export function DataTable({
                 })}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button variant="outline" size="sm" onClick={copyTopGuesses}>
-            <IconCopy className="mr-1 h-4 w-4" />
-            <span>Copy top guesses</span>
-          </Button>
         </div>
       </div>
       <TabsContent
@@ -888,7 +744,6 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 // Function to load data from predictions.csv
 export async function loadPredictionsData() {
   try {
-    console.log("Loading predictions data...");
     // Since we're in a client component, we need to fetch the data
     const response = await fetch('/predictions.csv');
     const csvText = await response.text();
@@ -907,7 +762,6 @@ export async function loadPredictionsData() {
     
     // Calculate the proportion of the season that has elapsed (OLD METHOD)
     const today = new Date();
-    console.log(`Current date: ${today.toISOString()}`);
     const seasonStart = new Date('2025-03-27');
     const seasonEnd = new Date('2025-09-28');
     
@@ -915,63 +769,46 @@ export async function loadPredictionsData() {
     const elapsedTime = Math.max(0, today.getTime() - seasonStart.getTime());
     const totalSeasonTime = seasonEnd.getTime() - seasonStart.getTime();
     const seasonProportion = elapsedTime / totalSeasonTime;
-    console.log(`OLD METHOD - Time-based proportion: ${(seasonProportion * 100).toFixed(2)}%`);
     
     // NEW METHOD: Get MLB schedule data to calculate games completed proportion
     let gamesProportion = 0;
     try {
-      console.log("Fetching MLB schedule data...");
       const scheduleUrl = 'https://statsapi.mlb.com/api/v1/schedule?hydrate=team,lineups&sportId=1&startDate=2025-03-27&endDate=2025-05-31&teamId=137';
-      console.log(`Schedule URL: ${scheduleUrl}`);
       
       const scheduleResponse = await fetch(scheduleUrl);
-      console.log(`Schedule API response status: ${scheduleResponse.status}`);
       
       const scheduleData = await scheduleResponse.json();
       
       // Get total games in the season
       const totalGames = scheduleData.totalGames;
-      console.log(`Total games in season: ${totalGames}`);
       
       // Calculate games completed so far
       let gamesCompleted = 0;
       
       // Count games that have already been played (before today)
       if (scheduleData.dates) {
-        console.log(`Found ${scheduleData.dates.length} date entries in schedule`);
-        
         for (const dateEntry of scheduleData.dates) {
           const gameDate = new Date(dateEntry.date);
-          console.log(`Checking date: ${dateEntry.date}, games on this date: ${dateEntry.totalGames}`);
           
           if (gameDate < today) {
             // Add the games for this date
             gamesCompleted += dateEntry.totalGames;
-            console.log(`Date ${dateEntry.date} is in the past, adding ${dateEntry.totalGames} games`);
-          } else {
-            console.log(`Date ${dateEntry.date} is in the future, skipping`);
           }
         }
-      } else {
-        console.log("No dates found in schedule data");
       }
       
       // Calculate proportion of games completed
       gamesProportion = totalGames > 0 ? gamesCompleted / totalGames : 0;
-      console.log(`NEW METHOD - Games completed: ${gamesCompleted}/${totalGames}`);
-      console.log(`NEW METHOD - Games-based proportion: ${(gamesProportion * 100).toFixed(2)}%`);
       
       // Use the games-based proportion for calculations
       // But if we're testing and it's 0, use the time-based approach
       if (gamesProportion === 0 && seasonProportion > 0) {
-        console.log("Using time-based proportion for testing since games proportion is 0");
         gamesProportion = seasonProportion;
       }
     } catch (error) {
       console.error('Error fetching MLB schedule data:', error);
       // Fall back to the old calculation method if API fails
       gamesProportion = seasonProportion;
-      console.log(`Falling back to time-based proportion: ${(gamesProportion * 100).toFixed(2)}%`);
     }
     
     // Process each record with player IDs and hit data
@@ -986,13 +823,6 @@ export async function loadPredictionsData() {
         
         // Calculate predicted hits so far based on games proportion (not time proportion)
         const predictedHitsSoFar = gamesProportion > 0 ? Number((predictedHits * gamesProportion).toFixed(1)) : 0;
-        
-        if (index === 0) {
-          console.log(`Example calculation for ${playerName}:`);
-          console.log(`- Predicted hits (season): ${predictedHits}`);
-          console.log(`- Games proportion: ${gamesProportion.toFixed(4)}`);
-          console.log(`- Predicted hits so far: ${predictedHitsSoFar}`);
-        }
         
         try {
           const playerIdResponse = await fetch(`/api/get-player-id?fullname=${encodeURIComponent(playerName)}`);

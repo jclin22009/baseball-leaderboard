@@ -1,6 +1,7 @@
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { ModeToggle } from "@/components/darkmode-button"
+import { CopyTopGuessesButton } from "@/components/copy-top-guesses-button"
 
 export function SiteHeader() {
   return (
@@ -13,6 +14,7 @@ export function SiteHeader() {
         />
         <h1 className="text-base font-medium">CS47N Leaderboard</h1>
         <div className="ml-auto flex items-center gap-2">
+          <CopyTopGuessesButton />
           <ModeToggle />
         </div>
       </div>
