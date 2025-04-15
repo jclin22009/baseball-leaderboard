@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/tooltip";
 import { IconInfoCircle } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
+import { MovingBorder } from "@/components/ui/moving-border";
 
 interface Prediction {
   id: number;
@@ -134,6 +135,61 @@ export function SectionCards() {
         
         // Check for infinity case (0 actual hits but predicted hits > 0)
         const isInfinite = prediction.actualHits === 0 && (prediction.predictedHitsSoFar ?? 0) > 0;
+        
+        if (index === 0) {
+          return (
+            <div key={prediction.id} className="relative overflow-hidden p-[1px] rounded-lg">
+              <div className="absolute inset-0">
+                <MovingBorder duration={4000} rx="30%" ry="30%">
+                  <div className="h-28 w-28 bg-[radial-gradient(#0ea5e9_35%,transparent_65%)] opacity-[0.9]" />
+                </MovingBorder>
+              </div>
+              <div className="relative w-full h-full rounded-lg bg-card overflow-hidden">
+                <Card className="@container/card h-full border-none bg-transparent">
+                  <CardHeader>
+                    <CardDescription>{rankLabels[index]}</CardDescription>
+                    <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+                      {firstName}
+                    </CardTitle>
+                    <CardAction>
+                      <Badge variant="outline">
+                        {isInfinite ? (
+                          <>∞</>
+                        ) : (
+                          prediction.percentageOff !== null && (
+                            <>±{prediction.percentageOff}%</>
+                          )
+                        )}
+                      </Badge>
+                    </CardAction>
+                  </CardHeader>
+                  <CardFooter className="flex-col items-start gap-1.5 text-sm">
+                    <div className="line-clamp-1 flex gap-2 font-medium">
+                      Guessed {prediction.predictedHits} hits →{" "}
+                      <span className="flex items-center">
+                        {prediction.predictedHitsSoFar ?? 0} to date
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="ml-1 h-4 w-4 p-0">
+                              <IconInfoCircle className="h-3 w-3 text-muted-foreground" />
+                              <span className="sr-only">Info</span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <p>Calculated based on the proportion of MLB games completed so far in the season.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </span>
+                    </div>
+                    <div className="text-muted-foreground">
+                      {prediction.player} is at {prediction.actualHits} hits
+                    </div>
+                  </CardFooter>
+                </Card>
+              </div>
+            </div>
+          );
+        }
         
         return (
           <Card key={prediction.id} className="@container/card">
