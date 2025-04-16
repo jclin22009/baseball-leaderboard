@@ -4,11 +4,21 @@ import { useEffect, useState } from "react";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, } from "@/components/ui/card";
 
+// Define NextGame interface
+interface NextGameInfo {
+  date: Date;
+  homeTeam: string;
+  awayTeam: string;
+  gameTime: Date | null;
+  venue: string;
+}
+
 export function SeasonProgress() {
   const [progress, setProgress] = useState(0);
   const [gamesCompleted, setGamesCompleted] = useState(0);
   const [totalGames, setTotalGames] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [nextGame, setNextGame] = useState<NextGameInfo | null>(null);
 
   useEffect(() => {
     async function fetchSeasonProgress() {
@@ -27,14 +37,32 @@ export function SeasonProgress() {
         const today = new Date();
         let completed = 0;
         const total = scheduleData.totalGames || 0;
+        let nextGameData = null;
         
-        // Count games that have already been played (before today)
+        // Count games that have already been played (before today) and find next game
         if (scheduleData.dates) {
-          for (const dateEntry of scheduleData.dates) {
+          // Sort dates to ensure chronological order
+          const sortedDates = [...scheduleData.dates].sort((a, b) => 
+            new Date(a.date).getTime() - new Date(b.date).getTime()
+          );
+          
+          for (const dateEntry of sortedDates) {
             const gameDate = new Date(dateEntry.date);
+            
             if (gameDate < today) {
-              // Add the games for this date
+              // Add the games for this date to completed count
               completed += dateEntry.totalGames;
+            } else if (!nextGameData && dateEntry.games && dateEntry.games.length > 0) {
+              // This is the first future date with games - get the next game
+              const game = dateEntry.games[0];
+              nextGameData = {
+                date: gameDate,
+                homeTeam: game.teams?.home?.team?.name || 'TBD',
+                awayTeam: game.teams?.away?.team?.name || 'TBD',
+                gameTime: game.gameDate ? new Date(game.gameDate) : null,
+                venue: game.venue?.name || 'TBD'
+              };
+              break;
             }
           }
         }
@@ -45,6 +73,7 @@ export function SeasonProgress() {
         setGamesCompleted(completed);
         setTotalGames(total);
         setProgress(proportion);
+        setNextGame(nextGameData);
       } catch (error) {
         console.error("Error fetching season progress:", error);
         
@@ -64,6 +93,21 @@ export function SeasonProgress() {
     
     fetchSeasonProgress();
   }, []);
+
+  // Format the next game date and time
+  const formatGameDateTime = (date, time) => {
+    if (!date) return 'TBD';
+    
+    const dateOptions = { weekday: 'short', month: 'short', day: 'numeric' };
+    const formattedDate = date.toLocaleDateString('en-US', dateOptions);
+    
+    if (!time) return formattedDate;
+    
+    const timeOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
+    const formattedTime = time.toLocaleTimeString('en-US', timeOptions);
+    
+    return `${formattedDate} at ${formattedTime}`;
+  };
   
   return (
     <Card className="mx-4 lg:mx-6">
@@ -78,6 +122,16 @@ export function SeasonProgress() {
             </span>
             <span>Season 2025</span>
           </div>
+          
+          {nextGame && (
+            <div className="text-sm mt-2 pt-2 border-t border-border">
+              <p className="font-medium">Next Game:</p>
+              <p className="text-xs">
+                {nextGame.awayTeam} @ {nextGame.homeTeam} - {formatGameDateTime(nextGame.date, nextGame.gameTime)}
+                {nextGame.venue && <span className="block text-muted-foreground">{nextGame.venue}</span>}
+              </p>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
