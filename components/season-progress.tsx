@@ -95,15 +95,23 @@ export function SeasonProgress() {
   }, []);
 
   // Format the next game date and time
-  const formatGameDateTime = (date, time) => {
+  const formatGameDateTime = (date: Date | null, time: Date | null): string => {
     if (!date) return 'TBD';
     
-    const dateOptions = { weekday: 'short', month: 'short', day: 'numeric' };
+    const dateOptions: Intl.DateTimeFormatOptions = { 
+      weekday: 'short' as const, 
+      month: 'short' as const, 
+      day: 'numeric' as const 
+    };
     const formattedDate = date.toLocaleDateString('en-US', dateOptions);
     
     if (!time) return formattedDate;
     
-    const timeOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
+    const timeOptions: Intl.DateTimeFormatOptions = { 
+      hour: 'numeric' as const, 
+      minute: '2-digit' as const, 
+      hour12: true 
+    };
     const formattedTime = time.toLocaleTimeString('en-US', timeOptions);
     
     return `${formattedDate} at ${formattedTime}`;
