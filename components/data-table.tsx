@@ -831,7 +831,7 @@ export async function loadPredictionsData() {
             
             // Step 2: Get actual hits for this player
             if (playerId) {
-              const hitsResponse = await fetch(`/api/get-hits-so-far?playerId=${playerId}&season=2025`);
+              const hitsResponse = await fetch(`/api/get-hits-so-far?playerId=${playerId}&season=2025&endDate=2025-05-31`);
               if (hitsResponse.ok) {
                 const hitsData = await hitsResponse.json();
                 actualHits = hitsData.hits;
