@@ -85,13 +85,13 @@ export function NavUser({
             <DropdownMenuGroup>
              
               <DropdownMenuItem asChild>
-                <a href="https://canvas.stanford.edu/courses/207400" target="_blank" rel="noopener noreferrer">
+                <a href="https://canvas.stanford.edu/courses/222383" target="_blank" rel="noopener noreferrer">
                   <IconBook />
                   Canvas
                 </a>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <a href="https://docs.google.com/document/u/4/d/1lZia1w3vK5maRN2Gr2msON_cLzUbcJH6cBZN4x4VW1U/edit" target="_blank" rel="noopener noreferrer">
+                <a href="https://canvas.stanford.edu/courses/222383" target="_blank" rel="noopener noreferrer">
                   <IconWorld />
                   Syllabus
                 </a>
@@ -99,7 +99,7 @@ export function NavUser({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
              <DropdownMenuItem asChild>
-                <a href="mailto:jasoncl@stanford.edu">
+                <a href="mailto:tcoghlan@stanford.edu">
                   <IconMail />
                   Email TAs
                 </a>

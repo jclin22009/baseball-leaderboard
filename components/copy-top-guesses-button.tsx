@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { IconCopy, IconCheck, IconLoader2 } from "@tabler/icons-react";
 import { loadPredictionsData } from "@/components/data-table";
+import { MLB_CONSTANTS } from "@/utils/mlb-constants";
 
 export function CopyTopGuessesButton() {
   const [isLoading, setIsLoading] = useState(false);
@@ -73,7 +74,7 @@ export function CopyTopGuessesButton() {
           </tbody>
         </table>
         <p style="font-style: italic; font-size: 0.9em; margin-top: 10px;">
-          Predicted hits (to date) are calculated based on the proportion of MLB games completed so far in the season (until our end date May 31). 
+          Predicted hits (to date) show how many hits your player &quot;should&quot; have right now if your prediction is on track — your end-of-${MLB_CONSTANTS.ASSIGNMENT_END_DATE.toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: 'UTC' })} prediction scaled by the fraction of Giants games played so far. 
         </p>
       `;
       
@@ -89,7 +90,7 @@ export function CopyTopGuessesButton() {
         plainText += `${index + 1}\t${item.student}\t${item.player}\t${item.predictedHits}\t${item.predictedHitsSoFar?.toFixed(1) || "0.0"}\t${item.actualHits || 0}\t${delta}\n`;
       });
       
-      plainText += "\nPredicted hits (to date) are calculated based on the proportion of MLB games completed so far in the season (until our end date May 31).";
+      plainText += `\nPredicted hits (to date) show how many hits your player "should" have right now if your prediction is on track — your end-of-${MLB_CONSTANTS.ASSIGNMENT_END_DATE.toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: 'UTC' })} prediction scaled by the fraction of Giants games played so far.`;
       
       // Copy to clipboard as both HTML and plain text
       await navigator.clipboard.write([
@@ -144,7 +145,7 @@ export function CopyTopGuessesButton() {
           tableText += `${index + 1}\t${item.student}\t${item.player}\t${item.predictedHits}\t${item.predictedHitsSoFar?.toFixed(1) || "0.0"}\t${item.actualHits || 0}\t${delta}\n`;
         });
         
-        tableText += "\nPredicted hits (to date) are calculated based on the proportion of MLB games completed so far in the season (until our end date May 31).";
+        tableText += `\nPredicted hits (to date) show how many hits your player "should" have right now if your prediction is on track — your end-of-${MLB_CONSTANTS.ASSIGNMENT_END_DATE.toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: 'UTC' })} prediction scaled by the fraction of Giants games played so far.`;
         
         // Use the basic clipboard API
         await navigator.clipboard.writeText(tableText);

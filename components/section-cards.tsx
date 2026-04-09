@@ -20,6 +20,7 @@ import {
 import { IconInfoCircle } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { MovingBorder } from "@/components/ui/moving-border";
+import { MLB_CONSTANTS } from "@/utils/mlb-constants";
 
 interface Prediction {
   id: number;
@@ -176,7 +177,7 @@ export function SectionCards() {
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs">
-                            <p>Calculated based on the proportion of MLB games completed so far in the season.</p>
+                            <p>How many hits your player &quot;should&quot; have right now if your prediction is on track</p>
                           </TooltipContent>
                         </Tooltip>
                       </span>
@@ -223,7 +224,7 @@ export function SectionCards() {
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
-                      <p>Calculated based on the proportion of MLB games completed so far in the season.</p>
+                      <p>How many hits your player &quot;should&quot; have right now if your prediction is on track</p>
                     </TooltipContent>
                   </Tooltip>
                 </span>

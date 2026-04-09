@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, } from "@/components/ui/card";
+import { MLB_CONSTANTS } from "@/utils/mlb-constants";
 
 // Define NextGame interface
 interface NextGameInfo {
@@ -24,7 +25,7 @@ export function SeasonProgress() {
     async function fetchSeasonProgress() {
       try {
         // Fetch the MLB schedule data
-        const scheduleUrl = 'https://statsapi.mlb.com/api/v1/schedule?hydrate=team,lineups&sportId=1&startDate=2025-03-27&endDate=2025-05-31&teamId=137';
+        const scheduleUrl = `https://statsapi.mlb.com/api/v1/schedule?hydrate=team,lineups&sportId=1&startDate=${MLB_CONSTANTS.SEASON_START}&endDate=${MLB_CONSTANTS.ASSIGNMENT_END}&teamId=${MLB_CONSTANTS.DEFAULT_TEAM_ID}`;
         const response = await fetch(scheduleUrl);
         
         if (!response.ok) {
@@ -79,8 +80,8 @@ export function SeasonProgress() {
         
         // Fallback to date-based calculation
         const today = new Date();
-        const seasonStart = new Date('2025-03-27');
-        const seasonEnd = new Date('2025-09-28');
+        const seasonStart = MLB_CONSTANTS.SEASON_START_DATE;
+        const seasonEnd = MLB_CONSTANTS.SEASON_END_DATE;
         const elapsedTime = Math.max(0, today.getTime() - seasonStart.getTime());
         const totalSeasonTime = seasonEnd.getTime() - seasonStart.getTime();
         const proportion = (elapsedTime / totalSeasonTime) * 100;
@@ -126,9 +127,9 @@ export function SeasonProgress() {
             <span>
               {loading 
                 ? "Loading..." 
-                : `${gamesCompleted} of ${totalGames} games completed (${Math.round(progress)}%) until May 31`}
+                : `${gamesCompleted} of ${totalGames} games completed (${Math.round(progress)}%) until ${MLB_CONSTANTS.ASSIGNMENT_END_DATE.toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: 'UTC' })}`}
             </span>
-            <span>Season 2025</span>
+            <span>Season {MLB_CONSTANTS.CURRENT_SEASON}</span>
           </div>
           
           {nextGame && (

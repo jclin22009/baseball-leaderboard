@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { MLB_CONSTANTS } from '@/utils/mlb-constants';
 
 export interface HitsByDate {
   date: string;
@@ -27,7 +28,7 @@ interface UseTeamHittersProps {
   limit?: number;
 }
 
-export function useTeamHitters({ teamId = '137', limit = 5 }: UseTeamHittersProps = {}) {
+export function useTeamHitters({ teamId = MLB_CONSTANTS.DEFAULT_TEAM_ID, limit = 5 }: UseTeamHittersProps = {}) {
   const [data, setData] = useState<TeamHittersResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);

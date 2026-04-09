@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { MLB_CONSTANTS } from '@/utils/mlb-constants';
 
 // Define proper interfaces for MLB API responses
 interface RosterPlayer {
@@ -17,8 +18,8 @@ interface PlayerGameLog {
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
-  const teamId = searchParams.get('teamId') || '137'; // Default to SF Giants (137)
-  const season = searchParams.get('season') || '2025';
+  const teamId = searchParams.get('teamId') || MLB_CONSTANTS.DEFAULT_TEAM_ID;
+  const season = searchParams.get('season') || MLB_CONSTANTS.CURRENT_SEASON;
   const limit = parseInt(searchParams.get('limit') || '5', 10); // Default to top 5 hitters
 
   if (!teamId) {
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
     
     // Get hitting stats for each player
     const playerStatsPromises = playerIds.map(async (playerId: number) => {
-      const statsUrl = `https://statsapi.mlb.com/api/v1/people/${playerId}?hydrate=stats(group=hitting,type=byDateRange,startDate=${season}-03-27,endDate=${new Date().toISOString().split('T')[0]})`;
+      const statsUrl = `https://statsapi.mlb.com/api/v1/people/${playerId}?hydrate=stats(group=hitting,type=byDateRange,startDate=${MLB_CONSTANTS.SEASON_START},endDate=${new Date().toISOString().split('T')[0]})`;
       const statsResponse = await fetch(statsUrl);
       
       if (!statsResponse.ok) {

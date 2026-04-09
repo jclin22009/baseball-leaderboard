@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { MLB_CONSTANTS } from "@/utils/mlb-constants";
 import {
   DndContext,
   KeyboardSensor,
@@ -181,7 +182,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
             </Button>
           </TooltipTrigger>
           <TooltipContent className="max-w-xs">
-            <p>Calculated based on the proportion of MLB games completed so far in the season.</p>
+            <p>How many hits your player "should" have right now if your prediction is on track</p>
           </TooltipContent>
         </Tooltip>
       </div>
@@ -761,8 +762,8 @@ export async function loadPredictionsData() {
     
     // Calculate the proportion of the season that has elapsed (OLD METHOD)
     const today = new Date();
-    const seasonStart = new Date('2025-03-27');
-    const seasonEnd = new Date('2025-09-28');
+    const seasonStart = MLB_CONSTANTS.SEASON_START_DATE;
+    const seasonEnd = MLB_CONSTANTS.SEASON_END_DATE;
     
     // Handle the case if we're viewing this before the season starts
     const elapsedTime = Math.max(0, today.getTime() - seasonStart.getTime());
@@ -772,7 +773,7 @@ export async function loadPredictionsData() {
     // NEW METHOD: Get MLB schedule data to calculate games completed proportion
     let gamesProportion = 0;
     try {
-      const scheduleUrl = 'https://statsapi.mlb.com/api/v1/schedule?hydrate=team,lineups&sportId=1&startDate=2025-03-27&endDate=2025-05-31&teamId=137';
+      const scheduleUrl = `https://statsapi.mlb.com/api/v1/schedule?hydrate=team,lineups&sportId=1&startDate=${MLB_CONSTANTS.SEASON_START}&endDate=${MLB_CONSTANTS.ASSIGNMENT_END}&teamId=${MLB_CONSTANTS.DEFAULT_TEAM_ID}`;
       
       const scheduleResponse = await fetch(scheduleUrl);
       
@@ -831,7 +832,7 @@ export async function loadPredictionsData() {
             
             // Step 2: Get actual hits for this player
             if (playerId) {
-              const hitsResponse = await fetch(`/api/get-hits-so-far?playerId=${playerId}&season=2025&endDate=2025-05-31`);
+              const hitsResponse = await fetch(`/api/get-hits-so-far?playerId=${playerId}&season=${MLB_CONSTANTS.CURRENT_SEASON}&endDate=${MLB_CONSTANTS.ASSIGNMENT_END}`);
               if (hitsResponse.ok) {
                 const hitsData = await hitsResponse.json();
                 actualHits = hitsData.hits;

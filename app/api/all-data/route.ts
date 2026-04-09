@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
+import { MLB_CONSTANTS } from "@/utils/mlb-constants";
 
 export async function GET() {
-  const sportId = 1; // Assuming 1 is for Baseball
-  const season = 2025;
-  const MLB_API_URL = `https://statsapi.mlb.com/api/v1/sports/${sportId}/players?season=${season}`;
+  const sportId = 1; // 1 = MLB
+  const MLB_API_URL = `https://statsapi.mlb.com/api/v1/sports/${sportId}/players?season=${MLB_CONSTANTS.CURRENT_SEASON}`;
 
   try {
     const res = await fetch(MLB_API_URL);

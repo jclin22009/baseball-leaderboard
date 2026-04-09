@@ -6,6 +6,7 @@ import { Area, AreaChart, Bar, BarChart, CartesianGrid, Legend, XAxis, YAxis } f
 import { useIsMobile } from "@/hooks/use-mobile"
 import { useTeamHitters } from "@/hooks/useTeamHitters" 
 import { loadPredictionsData, schema } from "@/components/data-table"
+import { MLB_CONSTANTS } from "@/utils/mlb-constants"
 import { z } from "zod"
 import {
   Card,
@@ -229,9 +230,9 @@ export function ChartAreaInteractive() {
           <CardTitle>SF Giants: Top 5 Hitters</CardTitle>
           <CardDescription>
             <span className="hidden @[540px]/card:block">
-              Cumulative hits since the start of the 2025 season
+              Cumulative hits since the start of the {MLB_CONSTANTS.CURRENT_SEASON} season
             </span>
-            <span className="@[540px]/card:hidden">2025 Season Cumulative Hits</span>
+            <span className="@[540px]/card:hidden">{MLB_CONSTANTS.CURRENT_SEASON} Season Cumulative Hits</span>
           </CardDescription>
           <CardAction>
             <ToggleGroup

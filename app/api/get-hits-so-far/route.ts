@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { MLB_CONSTANTS } from '@/utils/mlb-constants';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const playerId = searchParams.get('playerId');
-  const season = searchParams.get('season') ?? '2025';
+  const season = searchParams.get('season') ?? MLB_CONSTANTS.CURRENT_SEASON;
   const endDate = searchParams.get('endDate');
 
   if (!playerId) {
@@ -14,8 +15,8 @@ export async function GET(request: NextRequest) {
   // Otherwise, use season stats for the full season
   let url: string;
   if (endDate) {
-    // Use byDateRange with startDate as season start (March 27) and provided endDate
-    const startDate = `${season}-03-27`;
+    // Use byDateRange with configured season start and provided endDate
+    const startDate = MLB_CONSTANTS.SEASON_START;
     url = `https://statsapi.mlb.com/api/v1/people/${playerId}?hydrate=stats(group=hitting,type=byDateRange,startDate=${startDate},endDate=${endDate})`;
   } else {
     // Fallback to season stats

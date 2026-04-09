@@ -1,25 +1,41 @@
+// Helper to produce a YYYY-MM-DD string for MLB API URLs without timezone drift
+function toYMD(d: Date): string {
+  return d.toISOString().split('T')[0];
+}
+
+// Define raw values once so the methods below can reference them
+// EACH YEAR, UPDATE THESE VALUES
+const SEASON_START_DATE = new Date('2026-03-25');
+const SEASON_END_DATE   = new Date('2026-09-27');
+const ASSIGNMENT_END_DATE = new Date('2026-05-30'); // Term / leaderboard cutoff
+const SEASON_LENGTH_DAYS  = 187;
+const CURRENT_SEASON      = '2026';
+const DEFAULT_TEAM_ID     = '137'; // SF Giants
+
 export const MLB_CONSTANTS = {
-  // 2025 MLB season started on March 27th, 2025
-  SEASON_START_DATE: new Date('2025-03-27'),
-  
-  // Typical MLB regular season length (in days)
-  SEASON_LENGTH_DAYS: 186,
-  
-  // Current MLB season year
-  CURRENT_SEASON: '2025',
-  
-  // Calculate days elapsed in the current season
+  // Date objects (use when Date arithmetic is needed)
+  SEASON_START_DATE,
+  SEASON_END_DATE,
+  ASSIGNMENT_END_DATE,
+
+  // Season metadata
+  SEASON_LENGTH_DAYS,
+  CURRENT_SEASON,
+  DEFAULT_TEAM_ID,
+
+  // Pre-formatted YYYY-MM-DD strings for building MLB API URLs
+  SEASON_START:    toYMD(SEASON_START_DATE),
+  SEASON_END:      toYMD(SEASON_END_DATE),
+  ASSIGNMENT_END:  toYMD(ASSIGNMENT_END_DATE),
+
   getDaysElapsed: () => {
-    const seasonStartDate = new Date('2025-03-27');
     const currentDate = new Date();
-    const diffTime = Math.abs(currentDate.getTime() - seasonStartDate.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
+    const diffTime = Math.abs(currentDate.getTime() - SEASON_START_DATE.getTime());
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   },
-  
-  // Calculate season progress as a ratio (0-1)
+
   getSeasonProgress: () => {
     const daysElapsed = MLB_CONSTANTS.getDaysElapsed();
-    return daysElapsed / MLB_CONSTANTS.SEASON_LENGTH_DAYS;
-  }
-} 
+    return daysElapsed / SEASON_LENGTH_DAYS;
+  },
+};

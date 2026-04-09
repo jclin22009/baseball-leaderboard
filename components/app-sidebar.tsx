@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { MLB_CONSTANTS } from "@/utils/mlb-constants"
 import {
   IconChartBar,
   IconHelp,
@@ -26,7 +27,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const data = {
     user: {
       name: "CS47N: Datathletics",
-      email: "Spring 2025",
+      email: `Spring ${MLB_CONSTANTS.CURRENT_SEASON}`,
       avatar: "/avatars/shadcn.jpg",
     },
     navMain: [

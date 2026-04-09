@@ -7,6 +7,8 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+(You may need to run `npm install` first)
+
 First, run the development server:
 
 ```bash
@@ -24,6 +26,16 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+
+## Yearly Edits to Page
+
+As this years TA of CS47N, all YOU need to do to make the app current for your students is:
+1. Edit the `mlb-constants.ts` file. You need to change the const SEASON_START_DATE, SEASON_END_DATE, ASSIGNMENT_END_DATE, SEASON_LENGTH_DAYS, and CURRENT_SEASON variables so that the page and api calls reflect the current MLB season.
+2. Change the canvas, syllabus, and email links in the `nav-user.tsx` page to reflect the current class.
+3. Upload a new `predictions.csv` that includes the baseball challenge predictions of your new batch of students.
+
+That's it! The page should be good to go for your students!
+
 
 ## Learn More
 

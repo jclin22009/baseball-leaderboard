@@ -39,7 +39,7 @@ export default function About() {
                     <li><strong>Recharts</strong> - A composable charting library built on React components</li>
                   </ul>
                   <p className="mt-4">
-                    The application pulls data from the MLB Giants API to provide up-to-date baseball statistics and predictions.
+                    The application pulls data from the MLB Stats API to provide up-to-date baseball statistics and predictions.
                   </p>
                 </CardContent>
               </Card>

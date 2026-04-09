@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { MLB_CONSTANTS } from '@/utils/mlb-constants';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -9,9 +10,8 @@ export async function GET(request: NextRequest) {
   }
 
   // Fetch players for a specific sport and season
-  const sportId = 1; // Assuming 1 is for Baseball
-  const season = 2025; 
-  const MLB_API_URL = `https://statsapi.mlb.com/api/v1/sports/${sportId}/players?season=${season}`;
+  const sportId = 1; // 1 = MLB
+  const MLB_API_URL = `https://statsapi.mlb.com/api/v1/sports/${sportId}/players?season=${MLB_CONSTANTS.CURRENT_SEASON}`;
 
   try {
     const res = await fetch(MLB_API_URL);
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     if (player) {
       return NextResponse.json({ id: player.id }); // Assuming the player object has an 'id' field
     } else {
-      return NextResponse.json({ error: `Player with name '${fullName}' not found for season ${season}` }, { status: 404 });
+      return NextResponse.json({ error: `Player with name '${fullName}' not found for season ${MLB_CONSTANTS.CURRENT_SEASON}` }, { status: 404 });
     }
 
   } catch (error) {
