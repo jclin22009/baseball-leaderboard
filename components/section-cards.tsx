@@ -20,7 +20,6 @@ import {
 import { IconInfoCircle } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { MovingBorder } from "@/components/ui/moving-border";
-import { MLB_CONSTANTS } from "@/utils/mlb-constants";
 
 interface Prediction {
   id: number;

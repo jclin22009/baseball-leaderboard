@@ -182,7 +182,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
             </Button>
           </TooltipTrigger>
           <TooltipContent className="max-w-xs">
-            <p>How many hits your player "should" have right now if your prediction is on track</p>
+            <p>How many hits your player &quot;should&quot; have right now if your prediction is on track</p>
           </TooltipContent>
         </Tooltip>
       </div>
